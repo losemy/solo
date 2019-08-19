@@ -1,6 +1,6 @@
 /*
  * Solo - A small and beautiful blogging system written in Java.
- * Copyright (c) 2010-2018, b3log.org & hacpai.com
+ * Copyright (c) 2010-present, b3log.org
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -18,6 +18,8 @@
 package org.b3log.solo.repository;
 
 import org.b3log.latke.Keys;
+import org.b3log.latke.logging.Level;
+import org.b3log.latke.logging.Logger;
 import org.b3log.latke.repository.*;
 import org.b3log.latke.repository.annotation.Repository;
 import org.b3log.solo.model.ArchiveDate;
@@ -29,17 +31,40 @@ import org.json.JSONObject;
  * Archive date-Article repository.
  *
  * @author <a href="http://88250.b3log.org">Liang Ding</a>
- * @version 1.0.0.3, Sep 30, 2018
+ * @version 1.0.0.4, Jan 15, 2019
  * @since 0.3.1
  */
 @Repository
 public class ArchiveDateArticleRepository extends AbstractRepository {
 
     /**
+     * Logger.
+     */
+    private static final Logger LOGGER = Logger.getLogger(ArchiveDateArticleRepository.class);
+
+    /**
      * Public constructor.
      */
     public ArchiveDateArticleRepository() {
         super((ArchiveDate.ARCHIVE_DATE + "_" + Article.ARTICLE).toLowerCase());
+    }
+
+    /**
+     * Gets article count of an archive date specified by the given archive date id.
+     *
+     * @param archiveDateId the given archive date id
+     * @return article count, returns {@code -1} if occurred an exception
+     */
+    public int getArticleCount(final String archiveDateId) {
+        final Query query = new Query().setFilter(new PropertyFilter(ArchiveDate.ARCHIVE_DATE + "_" + Keys.OBJECT_ID, FilterOperator.EQUAL, archiveDateId));
+
+        try {
+            return (int) count(query);
+        } catch (final Exception e) {
+            LOGGER.log(Level.ERROR, "Gets archivedate [" + archiveDateId + "]'s article count failed", e);
+
+            return -1;
+        }
     }
 
     /**
@@ -66,7 +91,7 @@ public class ArchiveDateArticleRepository extends AbstractRepository {
     public JSONObject getByArchiveDateId(final String archiveDateId, final int currentPageNum, final int pageSize) throws RepositoryException {
         final Query query = new Query().setFilter(new PropertyFilter(ArchiveDate.ARCHIVE_DATE + "_" + Keys.OBJECT_ID, FilterOperator.EQUAL, archiveDateId)).
                 addSort(Article.ARTICLE + "_" + Keys.OBJECT_ID, SortDirection.DESCENDING).
-                setCurrentPageNum(currentPageNum).setPageSize(pageSize).setPageCount(1);
+                setPage(currentPageNum, pageSize).setPageCount(1);
 
         return get(query);
     }
